@@ -32,8 +32,6 @@ function main() {
     var CANVAS_HEIGHT = 600;
     var padSpeed = 400;
     var ballSpeed = 400
-    var p1Score;
-    var p2Score;
 
     var canvasElement = $("<canvas class='box' width='" + CANVAS_WIDTH + 
         "' height='" + CANVAS_HEIGHT + "'></canvas>");
@@ -41,13 +39,127 @@ function main() {
     canvasElement.appendTo('#canvascont');
     
     var FPS = 300;
-    setInterval(function() {
-        update();
-        draw();
-    }, 1000/FPS);
+  
+    var scorx
+  
+    var rect = function() {
+        this.color = "#fff";
+        this.x = 217;
+        this.y = 112;
+        this.wi = 32;
+        this.hi = 8;
+
+        this.draw = function() {
+            canvas.fillStyle = this.color;
+            canvas.fillRect(this.x, this.y, this.wi, this.hi);
+        }
+    //console.log(this.x);
+        
+    };
+  
+    var digit = function () {
+        var segments = [];
+        var offx;
+        var offy;
+        var wi;
+        var hi;
+        var value = 0;
+        for (var i = 0;i < 7; i++) {
+            segments.push(new rect());
+        }
+        this.off = function(newx, newy, newwi, newhi) {
+            offx = newx;
+            offy = newy;
+            wi = newwi
+            hi = newhi
+        
+            segments[0].x = offx;
+            segments[0].y = offy;
+            segments[0].wi = newwi;
+            segments[0].hi = newhi;
+            segments[1].x = offx;
+            segments[1].y = offy;
+            segments[1].wi = newhi;
+            segments[1].hi = newwi;
+            segments[2].x = offx+24;
+            segments[2].y = offy;
+            segments[2].wi = newhi;
+            segments[2].hi = newwi;
+            segments[3].x = offx;
+            segments[3].y = offy+28;
+            segments[3].wi = newwi;
+            segments[3].hi = newhi;
+            segments[4].x = offx;
+            segments[4].y = offy+32;
+            segments[4].wi = newhi;
+            segments[4].hi = newwi;
+            segments[5].x = offx+24;
+            segments[5].y = offy+32;
+            segments[5].wi = newhi;
+            segments[5].hi = newwi;
+            segments[6].x = offx;
+            segments[6].y = offy+56;
+            segments[6].wi = newwi;
+            segments[6].hi = newhi;
+        }
+        
+        var segLookups = [
+       //0,1,2,3,4,5,6
+        [1,1,1,0,1,1,1],   //0
+        [0,0,1,0,0,1,0],   //1
+        [1,0,1,1,1,0,1],   //2
+        [1,0,1,1,0,1,1],   //3
+        [0,1,1,1,0,1,0],   //4
+        [1,1,0,1,0,1,1],   //5
+        [1,1,0,1,1,1,1],   //6
+        [1,0,1,0,0,1,0],   //7
+        [1,1,1,1,1,1,1],   //8
+        [1,1,1,1,0,1,1]    //9
+        ];
+        
+        this.draw = function () {
+            var curlookup = segLookups[value];
+            for (var i = 0;i <7 ; i++) {
+                if(curlookup[i] == 1) {
+                    segments[i].draw();
+                }
+            }
+        }; 
+        
+        this.setVal = function(what) {
+            value = what;
+        };
+    };
+  
+    score = function (doff) {
+        this.score = 0,
+        this.inc = function () {
+            this.score +=1;
+            
+            this.digit1.setVal(this.score % 10);
+            var highDigit = Math.floor(this.score / 10);
+            this.digit2.setVal(highDigit);
+            
+        }
+        this.draw = function() {
+            this.digit1.draw();
+            if (this.score > 9) {
+                this.digit2.draw();
+            }
+            
+        // console.log(this.score);
+        }
+        
+        this.digit1 = new digit ();
+        this.digit2 = new digit ();
+        
+        this.digit1.off(92 + doff, 112, 32, 8);
+        this.digit2.off(doff, 112, 32, 8);
+        
+    }
     
-    var p1Score = 0
-    var p2Score = 0
+    var score1 = new score(509);
+    var score2 = new score(125);
 
     var ball = {
         color: "#fff",
@@ -95,8 +207,11 @@ function main() {
         }
     };
     
-        //ball.newMotion((Math.floor(Math.random()*(12))*10)+30, ballSpeed);
-        ball.newMotion(30, ballSpeed);
+    //ball.newMotion((Math.floor(Math.random()*(12))*10)+30, ballSpeed);
+    ball.newMotion(30, ballSpeed);
+
+
+    
 
     
     var hi=64;
@@ -105,11 +220,8 @@ function main() {
         color: "#fff",
         x: CANVAS_WIDTH-30-wi,
         y: CANVAS_HEIGHT/2-(hi/2),
-        vwidth: wi,
-        vheight: hi,
         width: wi,
         height: hi,
-        orient: "v",
         name: "one",
         draw: function() {
             canvas.fillStyle = this.color;
@@ -123,21 +235,16 @@ function main() {
         color: "#fff",
         x: 30,
         y: CANVAS_HEIGHT/2-(hi/2),
-        vwidth: wi,
-        vheight: hi,
         width: wi,
         height: hi,
-        orient: "v",
         name: "two",
         draw: function() {
             canvas.fillStyle = this.color;
             canvas.fillRect(this.x, this.y, this.width, this.height);
         }
-        //console.log(this.x);
-        
+    //console.log(this.x);
         
     };
-    
     
     
     var lastTime = new Date().getTime();
@@ -308,32 +415,33 @@ function main() {
             ball.vy=0;
             ball.x=CANVAS_WIDTH/2-(ball.width/2)
             Sound.play("score");
-            p2Score +=1;
+            score2.inc();
             setTimeout(function(){
                 ball.newMotion((Math.floor(Math.random()*(12))*10)+30, ballSpeed);
             }, 1000);
-            console.log(p2Score + "--- " + p1Score);
+            console.log(score2.score + "--- " + score1.score);
         }
         else if (ball.x<0) {
             ball.vx=0; 
             ball.vy=0;
             ball.x=CANVAS_WIDTH/2-(ball.width/2)
             Sound.play("score");
-            p1Score +=1;
+            score1.inc();
             setTimeout(function(){
                 ball.newMotion((Math.floor(Math.random()*(-12))*10)-30, ballSpeed);
             }, 1000);
-            console.log(p2Score + "--- " + p1Score);
+            console.log(score2.score + "--- " + score1.score);
         }
               
     
     
     }
+    // a --> paddle, b ---> Ball
     
     function collide (a,b){
         function pointCollide(x,y) {
             
-            if (x>=b.x && x<=(b.x+b.width) && y>=b.y && y<=(b.y+b.height)) {
+            if (x>=b.x && x<=(b.x+b.width) && y>=b.y && y<=(b.y+b.height)) { 
                 return true;
             }
         }
@@ -355,7 +463,15 @@ function main() {
             
         player2.draw();
         player.draw();
-        ball.draw();
+        ball.draw();                                                                                                                                                                                                                 
+        score1.draw();
+        score2.draw();
+        
     //  console.log(keydown);
     }
+    setInterval(function() {
+        update();
+        draw();
+    }, 1000/FPS);
+  
 }
