@@ -1,6 +1,7 @@
 
 $(function() {
     window.keydown = {};
+    window.keyup = {};
   
     function keyName(event) {
         return jQuery.hotkeys.specialKeys[event.which] ||
@@ -41,8 +42,11 @@ function main() {
     
     var FPS = 300;
   
-    var scorx
+    var scorx;
   
+    // a rect is one of the blocks that makes up a digit
+    // each digit has an array called segments - which is just the list of these
+    // rect's that make up that digit
     var rect = function() {
         this.color = "#fff";
         this.x = 217;
@@ -54,26 +58,25 @@ function main() {
             canvas.fillStyle = this.color;
             canvas.fillRect(this.x, this.y, this.wi, this.hi);
         }
-    //console.log(this.x);
-        
     };
   
-    var digit = function () {
+    // a single digit - containing 8 rects
+    // and a list of which of the 8 rects to draw per value 0-9
+    var digit = function() {
         var segments = [];
         var offx;
         var offy;
-        var wi;
-        var hi;
         var value = 0;
+       
         for (var i = 0;i < 7; i++) {
             segments.push(new rect());
         }
+        
         this.off = function(newx, newy, newwi, newhi) {
             offx = newx;
             offy = newy;
-            wi = newwi
-            hi = newhi
-        
+            
+            // set up the position of each segment
             segments[0].x = offx;
             segments[0].y = offy;
             segments[0].wi = newwi;
@@ -103,22 +106,24 @@ function main() {
             segments[6].wi = newwi;
             segments[6].hi = newhi;
         }
-        
+  
+        // the array of arrays of each segment to display for each digit
         var segLookups = [
-       //0,1,2,3,4,5,6
-        [1,1,1,0,1,1,1],   //0
-        [0,0,1,0,0,1,0],   //1
-        [1,0,1,1,1,0,1],   //2
-        [1,0,1,1,0,1,1],   //3
-        [0,1,1,1,0,1,0],   //4
-        [1,1,0,1,0,1,1],   //5
-        [1,1,0,1,1,1,1],   //6
-        [1,0,1,0,0,1,0],   //7
-        [1,1,1,1,1,1,1],   //8
-        [1,1,1,1,0,1,1]    //9
+           //0,1,2,3,4,5,6
+            [1,1,1,0,1,1,1],   //0
+            [0,0,1,0,0,1,0],   //1
+            [1,0,1,1,1,0,1],   //2
+            [1,0,1,1,0,1,1],   //3
+            [0,1,1,1,0,1,0],   //4
+            [1,1,0,1,0,1,1],   //5
+            [1,1,0,1,1,1,1],   //6
+            [1,0,1,0,0,1,0],   //7
+            [1,1,1,1,1,1,1],   //8
+            [1,1,1,1,0,1,1]    //9
         ];
         
         this.draw = function () {
+            
             var curlookup = segLookups[value];
             for (var i = 0;i <7 ; i++) {
                 if(curlookup[i] == 1) {
@@ -132,8 +137,17 @@ function main() {
         };
     };
   
+    // the score object contains a score variable that gets incremented on a point
+    // a single score contains 2 digits
     score = function (doff) {
-        this.score = 0,
+        this.score = 0;
+        
+        this.reset = function() {
+            this.score = 0;
+            this.digit1.setVal(0);
+            this.digit2.setVal(0);
+        };
+        
         this.inc = function () {
             this.score +=1;
             
@@ -141,27 +155,27 @@ function main() {
             var highDigit = Math.floor(this.score / 10);
             this.digit2.setVal(highDigit);
             
-        }
+        };
+        
         this.draw = function() {
             this.digit1.draw();
             if (this.score > 9) {
                 this.digit2.draw();
             }
-            
-        // console.log(this.score);
-        }
+        };
         
         this.digit1 = new digit ();
         this.digit2 = new digit ();
         
         this.digit1.off(92 + doff, 112, 32, 8);
-        this.digit2.off(doff, 112, 32, 8);
-        
+        this.digit2.off(doff, 112, 32, 8);        
     }
     
+    // make the two score objects
     var score1 = new score(509);
     var score2 = new score(125);
 
+    // the single ball object literal 
     var ball = {
         color: "#fff",
         x: CANVAS_WIDTH/2-(4),
@@ -210,11 +224,8 @@ function main() {
     
     //ball.newMotion((Math.floor(Math.random()*(12))*10)+30, ballSpeed);
     ball.newMotion(30, ballSpeed);
-
-
     
-
-    
+    // now the 2 player object literals 
     var hi=64;
     var wi=8;
     var player = {
@@ -248,8 +259,15 @@ function main() {
     };
     
     
+    // this is used to time each pass through the loop
     var lastTime = new Date().getTime();
     
+    // Pause
+    var pauseGame = false;
+    
+    var pDown = false;
+    
+    // the main position update, reacting to keypresses and detecting collissions
     function update() {
         
         var  thisTime = new Date().getTime();
@@ -264,6 +282,18 @@ function main() {
         //        if (keydown.right) {
         //          player.x += 5;
         //    }
+        
+        if (!keydown.p) {
+            pDown = false;
+        }
+            
+        if (keydown.p && !pDown) {
+            pauseGame = true;
+            pDown = true;
+            pauseTime = thisTime;
+            console.log("paused");
+        }
+        
         if (keydown.down) {
             player.y += padOffset;
         }
@@ -394,8 +424,7 @@ function main() {
             console.log("Angle - "+ball.angle);
             ball.revx();
             console.log("bounce Angle - "+ball.angle);
-    }
-           
+        }   
         
         if(ball.y>CANVAS_HEIGHT-bottomoff-ball.height) {
             ball.revy();
@@ -433,10 +462,8 @@ function main() {
             }, 1000);
             console.log(score2.score + "--- " + score1.score);
         }
-              
-    
-    
     }
+    
     // a --> paddle, b ---> Ball
     
     function collide (a,b){
@@ -457,7 +484,7 @@ function main() {
         var lineheight = 8
         canvas.fillStyle = "#000";
         canvas.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-        for (n=0;n<31; n++) {
+        for (n=0; n<31; n++) {
             canvas.fillStyle = "#fff";
             canvas.fillRect((CANVAS_WIDTH/2)-(linewidth/2), topoff+lineheight+(n*2*lineheight), linewidth, lineheight);
         }
@@ -471,9 +498,65 @@ function main() {
     //  console.log(keydown);
     }
     
+    var gameState = 1;
+    var spaceDown = false;
+    
     setInterval(function() {
-        update();
-        draw();
+        
+        if (gameState == 1) {
+            score1.reset();
+            score2.reset();
+            
+            canvas.fillStyle = "#000";
+            canvas.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            
+            ball.x = CANVAS_WIDTH/2-(4);
+            ball.y = 200;
+            //ball.newMotion((Math.floor(Math.random()*(12))*10)+30, ballSpeed);
+            ball.newMotion(30, ballSpeed);
+
+            
+            if (!keydown.space) {
+                spaceDown = false;
+            }
+            if (keydown.space && !spaceDown) {
+                gameState = 2;
+                lastTime = new Date().getTime();
+            }
+        }
+        
+        if (gameState == 2) {
+            if (!pauseGame){
+                update();
+            } else {
+            
+                if (!keydown.p) {
+                    pDown = false;
+                }
+                if (keydown.p && !pDown) {
+                    pauseGame = false;
+                    pDown = true;
+                    lastTime = new Date().getTime();
+                    console.log("unpaused");
+                }
+                
+            }
+            draw();
+            
+            if (score1.score >= 2 || score2.score >= 2) {
+                gameState = 3;
+            }
+        }
+        
+        if (gameState == 3) {
+            if (keydown.space) {
+                gameState = 1;
+                spaceDown = true;
+            }
+            draw();
+        }
+        
+        
     }, 1000/FPS);
   
 }
