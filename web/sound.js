@@ -1,6 +1,8 @@
 var Sound = (function($) {
   var format = $.browser.webkit ? ".mp3" : ".wav";
+  // force wav
   format = ".wav";
+  
   var soundPath = "/pong/";
   var sounds = {};
 
@@ -8,6 +10,7 @@ var Sound = (function($) {
     var sound = $('<audio />').get(0);
     sound.src = soundPath + name + format;
 
+    console.log("play " + soundPath + name + format);
     return sound;
   }
   
@@ -27,7 +30,7 @@ var Sound = (function($) {
     play: function(name, maxChannels) {
       // Note: Too many channels crash browsers
       maxChannels = maxChannels || 4;
-
+      
       if(!sounds[name]) {
         sounds[name] = [loadSoundChannel(name)];
       }

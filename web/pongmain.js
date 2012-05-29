@@ -32,6 +32,7 @@ function main() {
     var CANVAS_HEIGHT = 600;
     var padSpeed = 400;
     var ballSpeed = 400
+    
 
     var canvasElement = $("<canvas class='box' width='" + CANVAS_WIDTH + 
         "' height='" + CANVAS_HEIGHT + "'></canvas>");
@@ -469,6 +470,7 @@ function main() {
         
     //  console.log(keydown);
     }
+    
     setInterval(function() {
         update();
         draw();
