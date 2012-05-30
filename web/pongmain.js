@@ -109,17 +109,17 @@ function main() {
   
         // the array of arrays of each segment to display for each digit
         var segLookups = [
-           //0,1,2,3,4,5,6
-            [1,1,1,0,1,1,1],   //0
-            [0,0,1,0,0,1,0],   //1
-            [1,0,1,1,1,0,1],   //2
-            [1,0,1,1,0,1,1],   //3
-            [0,1,1,1,0,1,0],   //4
-            [1,1,0,1,0,1,1],   //5
-            [1,1,0,1,1,1,1],   //6
-            [1,0,1,0,0,1,0],   //7
-            [1,1,1,1,1,1,1],   //8
-            [1,1,1,1,0,1,1]    //9
+        //0,1,2,3,4,5,6
+        [1,1,1,0,1,1,1],   //0
+        [0,0,1,0,0,1,0],   //1
+        [1,0,1,1,1,0,1],   //2
+        [1,0,1,1,0,1,1],   //3
+        [0,1,1,1,0,1,0],   //4
+        [1,1,0,1,0,1,1],   //5
+        [1,1,0,1,1,1,1],   //6
+        [1,0,1,0,0,1,0],   //7
+        [1,1,1,1,1,1,1],   //8
+        [1,1,1,1,0,1,1]    //9
         ];
         
         this.draw = function () {
@@ -175,57 +175,7 @@ function main() {
     var score1 = new score(509);
     var score2 = new score(125);
 
-    // the single ball object literal 
-    var ball = {
-        color: "#fff",
-        x: CANVAS_WIDTH/2-(4),
-        y: 200,
-        vx: 0,
-        vy: 0,
-        width: 8,
-        height: 8,
-        angle: 0,
-        speed: 0,
-        draw: function() {
-            canvas.fillStyle = this.color;
-            canvas.fillRect(this.x, this.y, this.width, this.height);
-        //console.log(this.x);
-        },
-        update: function (tDelta) {
-            this.x+=this.vx*tDelta;
-            this.y+=this.vy*tDelta;
-        },
-        newMotion: function (angle, speed) {
-            if (angle>180) {
-                angle=angle-360;
-            }
-            this.angle=angle;
-            var rads = angle*(Math.PI/180);
-            this.speed=speed;
-            this.vx=Math.sin(rads)*this.speed;
-            this.vy=Math.cos(rads)*this.speed;
-        },
-        revx: function () {
-            this.vx=0-this.vx;
-            this.angle = 0-this.angle;
-            console.log(this.angle);
-        },
-        revy: function () {
-            this.vy=0-this.vy;
-            if (this.angle>=0) {
-                this.angle=180-this.angle;
-            }
-            else {
-                this.angle = 0-180-this.angle;
-            }
-            console.log("after bounce angle --- "+this.angle);
-        }
-    };
-    
-    //ball.newMotion((Math.floor(Math.random()*(12))*10)+30, ballSpeed);
-    ball.newMotion(30, ballSpeed);
-    
-    // now the 2 player object literals 
+// now the 2 player object literals 
     var hi=64;
     var wi=8;
     var player = {
@@ -257,6 +207,67 @@ function main() {
     //console.log(this.x);
         
     };
+
+    // the single ball object literal 
+    var ball = {
+        color: "#fff",
+        x: CANVAS_WIDTH/2-(4),
+        y: 200,
+        vx: 0,
+        vy: 0,
+        width: 8,
+        height: 8,
+        angle: 0,
+        speed: 0,
+        draw: function() {
+            canvas.fillStyle = this.color;
+            canvas.fillRect(this.x, this.y, this.width, this.height);
+        //console.log(this.x);
+        },
+        update: function (tDelta) {
+            this.x+=this.vx*tDelta;
+            this.y+=this.vy*tDelta;
+        },
+        newMotion: function (angle, speed) {
+            if (angle>180) {
+                angle=angle-360;
+            }
+            this.angle=angle;
+            var rads = angle*(Math.PI/180);
+            this.speed=speed;
+            this.vx=Math.sin(rads)*this.speed;
+            this.vy=Math.cos(rads)*this.speed;
+            ballIntercept = ball.y - (ball.x - player2.x)/Math.tan((this.angle/180)*Math.PI)
+
+        },
+        revx: function () {
+            this.vx=0-this.vx;
+            this.angle = 0-this.angle;
+            ballIntercept = CANVAS_HEIGHT/2;
+            console.log(this.angle);
+            ballIntercept = ball.y - (ball.x - player2.x)/Math.tan((this.angle/180)*Math.PI)
+
+        },
+        revy: function () {
+            this.vy=0-this.vy;
+            if (this.angle>=0) {
+                this.angle=180-this.angle;
+            }
+            else {
+                this.angle = 0-180-this.angle;
+            }
+            console.log("after bounce angle --- "+this.angle);
+            
+            ballIntercept = ball.y - (ball.x - player2.x)/Math.tan((this.angle/180)*Math.PI)
+            
+            console.log("ballIntercept --- " + ballIntercept);
+        }
+    };
+    
+    //ball.newMotion((Math.floor(Math.random()*(12))*10)+30, ballSpeed);
+    ball.newMotion(30, ballSpeed);
+    
+    
     
     
     // this is used to time each pass through the loop
@@ -267,6 +278,7 @@ function main() {
     
     var pDown = false;
     
+    var ballIntercept = 0;
     // the main position update, reacting to keypresses and detecting collissions
     function update() {
         
@@ -321,27 +333,42 @@ function main() {
                 player2.y -= padOffset;
             }
         }
-        
         else {
-            if (ball.angle < 0) {
-                if (ball.y > player2.y+player2.height/2) {
-                    player2.y += padOffset/1.5;
-                }
             
+            var aiOffset = padOffset/2.2;
+            
+            if (ball.angle == -90) {
+                if (ball.y > player2.y+player2.height/2) {
+                    player2.y += aiOffset;
+                }
+                
                 if (ball.y < player2.y+player2.height/2) {
-                    player2.y -= padOffset/1.5;
+                    player2.y -= aiOffset;
                 }
             }
             else {
-               if (player2.y+player2.height/2 > CANVAS_HEIGHT/2) {
-                    player2.y -= padOffset/2;
+                if (ball.angle < 0) {
+                    
+                    if ((player2.y + player2.height/2) >= ballIntercept) {
+                        player2.y -= aiOffset;
+                    }
+                    if ((player2.y + player2.height/2) < ballIntercept) {
+                        player2.y += aiOffset;
+                    }
+                
                 }
+                else {   // go back to middle
+                    if (player2.y+player2.height/2 > CANVAS_HEIGHT/2) {
+                        player2.y -= aiOffset;
+                    }
             
-                if (player2.y+player2.height/2 < CANVAS_HEIGHT/2) {
-                    player2.y += padOffset/2;
+                    if (player2.y+player2.height/2 < CANVAS_HEIGHT/2) {
+                        player2.y += aiOffset;
+                    }
                 }
+            }
         }
-        }
+    
         /*      if ((player.orient == "v") && (keydown.h)) {
             player.width = player.vheight;
             player.height = player.vwidth;
@@ -424,7 +451,7 @@ function main() {
                 newAngle=0-newAngle;
             }
             
-          /*  if (paddle.name == "one") {
+            /*  if (paddle.name == "one") {
                 if (chunk==0 || chunk==7){
                     
                 }
@@ -464,21 +491,22 @@ function main() {
             
         }
         
-        if(ball.x>CANVAS_WIDTH-ball.width) {
+        if(ball.x > CANVAS_WIDTH-ball.width) {
             ball.vx=0; 
             ball.vy=0;
-            ball.x=CANVAS_WIDTH/2-(ball.width/2)
+            ball.x=CANVAS_WIDTH/2 - (ball.width/2)
             Sound.play("score");
             score2.inc();
             setTimeout(function(){
                 ball.newMotion((Math.floor(Math.random()*(12))*10)+30, ballSpeed);
             }, 1000);
+            
             console.log(score2.score + "--- " + score1.score);
         }
-        else if (ball.x<0) {
+        else if (ball.x < 0) {
             ball.vx=0; 
             ball.vy=0;
-            ball.x=CANVAS_WIDTH/2-(ball.width/2)
+            ball.x=CANVAS_WIDTH/2 - (ball.width/2)
             Sound.play("score");
             score1.inc();
             setTimeout(function(){
@@ -531,10 +559,15 @@ function main() {
     function drawWin() {
         draw();
         
+        var winMessage = "YOU WIN";
+        if (score1.score < score2.score) {
+            winMessage = "YOU LOSE";
+        }
+        
         canvas.fillStyle = "#fff";
         canvas.textAlign = "center";
         canvas.font = "bold 100px sans-serif";
-        canvas.fillText("WINNER", CANVAS_WIDTH/2, CANVAS_HEIGHT/2-50);
+        canvas.fillText(winMessage, CANVAS_WIDTH/2, CANVAS_HEIGHT/2-50);
         canvas.font = "20px sans-serif";
         canvas.fillText("(Press space to continue)", CANVAS_WIDTH/2, CANVAS_HEIGHT/2+100);
         
@@ -566,7 +599,7 @@ function main() {
     
     
     
-    setInterval(function() {
+    setInterval( function() {
         
         if (gameState == 1) {
                  
@@ -580,9 +613,13 @@ function main() {
                 gameState = 2;
                 score1.reset();
                 score2.reset();
+                ball.vx=0; 
+                ball.vy=0;
                 ball.x = CANVAS_WIDTH/2-(4);
                 ball.y = 200;
-                ball.newMotion((Math.floor(Math.random()*(12))*10)+30, ballSpeed);
+                setTimeout(function(){
+                    ball.newMotion((Math.floor(Math.random()*(12))*10)+30, ballSpeed);
+                }, 1000);
                 //ball.newMotion(30, ballSpeed);
                 lastTime = new Date().getTime();
             }
@@ -624,5 +661,6 @@ function main() {
         
         
     }, 1000/FPS);
-  
+    
 }
+
