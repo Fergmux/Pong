@@ -310,14 +310,38 @@ function main() {
         //if (keydown.d) {
         //  player2.x += 5;
         //}
-        if (keydown.s) {
-            player2.y += padOffset;
-        }
+        
+        if (menuSelection == 2) {
+        
+            if (keydown.s) {
+                player2.y += padOffset;
+            }
 
-        if (keydown.w) {
-            player2.y -= padOffset;
+            if (keydown.w) {
+                player2.y -= padOffset;
+            }
         }
         
+        else {
+            if (ball.angle < 0) {
+                if (ball.y > player2.y+player2.height/2) {
+                    player2.y += padOffset/1.5;
+                }
+            
+                if (ball.y < player2.y+player2.height/2) {
+                    player2.y -= padOffset/1.5;
+                }
+            }
+            else {
+               if (player2.y+player2.height/2 > CANVAS_HEIGHT/2) {
+                    player2.y -= padOffset/2;
+                }
+            
+                if (player2.y+player2.height/2 < CANVAS_HEIGHT/2) {
+                    player2.y += padOffset/2;
+                }
+        }
+        }
         /*      if ((player.orient == "v") && (keydown.h)) {
             player.width = player.vheight;
             player.height = player.vwidth;
@@ -478,6 +502,44 @@ function main() {
         
     }
     
+    var menuSelection = 1;
+    
+    function updateMenu() {
+        if ((keydown.down || keydown.s) && menuSelection == 1) {
+            menuSelection = 2;
+        }
+        
+        if ((keydown.up || keydown.w) && menuSelection == 2) {
+            menuSelection = 1;
+        }
+    }
+    
+    function drawmenu() {
+        canvas.fillStyle = "#000";
+        canvas.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        
+        canvas.fillStyle = "#fff";
+        canvas.textAlign = "center";
+        canvas.font = "bold 30px sans-serif";
+        canvas.fillText("1 PLAYER", CANVAS_WIDTH/2, CANVAS_HEIGHT/2-100);
+        canvas.fillText("2 PLAYER", CANVAS_WIDTH/2, CANVAS_HEIGHT/2+100);
+        
+        
+        canvas.fillText(">", CANVAS_WIDTH/2-100, CANVAS_HEIGHT/2+menuSelection*200-300);
+    }
+    
+    function drawWin() {
+        draw();
+        
+        canvas.fillStyle = "#fff";
+        canvas.textAlign = "center";
+        canvas.font = "bold 100px sans-serif";
+        canvas.fillText("WINNER", CANVAS_WIDTH/2, CANVAS_HEIGHT/2-50);
+        canvas.font = "20px sans-serif";
+        canvas.fillText("(Press space to continue)", CANVAS_WIDTH/2, CANVAS_HEIGHT/2+100);
+        
+    }
+    
     function draw() {
         var n;
         var linewidth = 4
@@ -501,28 +563,30 @@ function main() {
     var gameState = 1;
     var spaceDown = false;
     
+    
+    
+    
     setInterval(function() {
         
         if (gameState == 1) {
-            score1.reset();
-            score2.reset();
+                 
+            updateMenu();         
+            drawmenu();
             
-            canvas.fillStyle = "#000";
-            canvas.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-            
-            ball.x = CANVAS_WIDTH/2-(4);
-            ball.y = 200;
-            //ball.newMotion((Math.floor(Math.random()*(12))*10)+30, ballSpeed);
-            ball.newMotion(30, ballSpeed);
-
-            
-            if (!keydown.space) {
+            if (!keydown.space && !keydown["return"]) {
                 spaceDown = false;
             }
-            if (keydown.space && !spaceDown) {
+            if ((keydown.space || keydown["return"]) && !spaceDown) {
                 gameState = 2;
+                score1.reset();
+                score2.reset();
+                ball.x = CANVAS_WIDTH/2-(4);
+                ball.y = 200;
+                ball.newMotion((Math.floor(Math.random()*(12))*10)+30, ballSpeed);
+                //ball.newMotion(30, ballSpeed);
                 lastTime = new Date().getTime();
             }
+            
         }
         
         if (gameState == 2) {
@@ -552,8 +616,10 @@ function main() {
             if (keydown.space) {
                 gameState = 1;
                 spaceDown = true;
+                
             }
-            draw();
+            drawWin();
+            
         }
         
         
