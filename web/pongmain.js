@@ -33,17 +33,79 @@ function main() {
     var CANVAS_HEIGHT = 600;
     var padSpeed = 400;
     var ballSpeed = 400
-    
+    var reset = 0;
+    var aiSpeed = 2.2; // 1 = fast, 5 = slow, 0 = break
+    var randOffset = 0;
 
-    var canvasElement = $("<canvas class='box' width='" + CANVAS_WIDTH + 
+    var canvasThing = $("<canvas class='box' width='" + CANVAS_WIDTH + 
         "' height='" + CANVAS_HEIGHT + "'></canvas>");
-    var canvas = canvasElement.get(0).getContext("2d");
-    canvasElement.appendTo('#canvascont');
+    
+    var canvasElement = canvasThing.get(0);
+    
+    canvasThing.appendTo('#canvascont');
+    
+    var canvas = canvasElement.getContext("2d");
     
     var FPS = 300;
-  
+
     var scorx;
-  
+    var imgWi = 32
+    
+    var imgStore = {
+        loadImages: function(){
+            var iconx = 20
+            var icony = 550
+            this.loadImage('img/i.png','i',iconx,icony);
+            this.loadImage('img/pause.png','pause',iconx,icony);
+            this.loadImage('img/play.png','play',iconx,icony);
+            this.loadImage('img/unmuted.png','unmuted',2*iconx + imgWi,icony);
+            this.loadImage('img/muted.png','muted',2*iconx + imgWi,icony);
+            this.loadImage('img/settings.png','settings',3*iconx + 2*imgWi,icony);
+        },
+        loadImage: function(src, name, x, y){
+            var img = new Image();
+            img.src = src;
+            img.x = x;
+            img.y = y;
+            img.clicked = false;
+            img.onload = function(){
+                imgStore[name] = img;
+            };
+        },
+        drawImage: function(name){
+            var imge = imgStore[name];
+            canvas.drawImage(imge, imge.x, imge.y) ;
+        },
+        checkClick: function (x, y){
+            console.log("x: "+x);
+            console.log("y: "+y);
+            this.checkImageClick("i", x, y);
+            this.checkImageClick("pause", x, y);
+            this.checkImageClick("muted", x, y);
+            this.checkImageClick("settings", x, y);
+        },
+        checkImageClick: function(name, x, y){
+            var imge = imgStore[name];
+            if ((x >= imge.x && x <= imge.x + imgWi) && (y >= imge.y && y <= imge.y + imgWi)){
+                imge.clicked = true;
+                console.log("clicked =");
+            }
+        }   
+    };
+    imgStore.loadImages();
+        
+    
+    canvasElement.addEventListener("click",function(e){
+        imgStore.checkClick(e.offsetX, e.offsetY);
+    });
+    
+    function playSound(name){
+        if (!isMute){
+            Sound.play(name);
+        }
+    }
+    
+    
     // a rect is one of the blocks that makes up a digit
     // each digit has an array called segments - which is just the list of these
     // rect's that make up that digit
@@ -137,6 +199,10 @@ function main() {
         };
     };
   
+  
+  
+  
+  
     // the score object contains a score variable that gets incremented on a point
     // a single score contains 2 digits
     score = function (doff) {
@@ -208,6 +274,7 @@ function main() {
         
     };
 
+
     // the single ball object literal 
     var ball = {
         color: "#fff",
@@ -228,6 +295,11 @@ function main() {
             this.x+=this.vx*tDelta;
             this.y+=this.vy*tDelta;
         },
+        
+        getBallIntercept: function () {
+            ballIntercept = (this.y - (this.x - player2.x)/Math.tan((this.angle/180)*Math.PI))+(Math.floor((Math.random()*64)-32));
+        },
+        
         newMotion: function (angle, speed) {
             if (angle>180) {
                 angle=angle-360;
@@ -237,17 +309,17 @@ function main() {
             this.speed=speed;
             this.vx=Math.sin(rads)*this.speed;
             this.vy=Math.cos(rads)*this.speed;
-            ballIntercept = ball.y - (ball.x - player2.x)/Math.tan((this.angle/180)*Math.PI)
-
+            this.getBallIntercept();
         },
+        
         revx: function () {
             this.vx=0-this.vx;
             this.angle = 0-this.angle;
-            ballIntercept = CANVAS_HEIGHT/2;
             console.log(this.angle);
-            ballIntercept = ball.y - (ball.x - player2.x)/Math.tan((this.angle/180)*Math.PI)
-
+            this.getBallIntercept();
+            randOffset = (Math.floor((Math.random()*64)-32));
         },
+        
         revy: function () {
             this.vy=0-this.vy;
             if (this.angle>=0) {
@@ -256,11 +328,7 @@ function main() {
             else {
                 this.angle = 0-180-this.angle;
             }
-            console.log("after bounce angle --- "+this.angle);
-            
-            ballIntercept = ball.y - (ball.x - player2.x)/Math.tan((this.angle/180)*Math.PI)
-            
-            console.log("ballIntercept --- " + ballIntercept);
+            this.getBallIntercept();
         }
     };
     
@@ -275,33 +343,42 @@ function main() {
     
     // Pause
     var pauseGame = false;
-    
+    var mDown = false;
     var pDown = false;
     
     var ballIntercept = 0;
+    
+    function pExemptUpdate(){
+        if (!keydown.p) {
+            pDown = false;
+        }
+        if ((keydown.p && !pDown) || imgStore["pause"].clicked) {
+            pauseGame = false;
+            pDown = true;
+            lastTime = new Date().getTime();
+            imgStore["pause"].clicked = false;
+            console.log("unpaused");
+        }
+        checkMute();
+    }
     // the main position update, reacting to keypresses and detecting collissions
+    
     function update() {
         
         var  thisTime = new Date().getTime();
         var timeDelta = (thisTime-lastTime)/1000;
         var padOffset = padSpeed*timeDelta;
         lastTime = thisTime;
-        
-        //       if (keydown.left) {
-        //         player.x -= 5;
-        //   }
-
-        //        if (keydown.right) {
-        //          player.x += 5;
-        //    }
+        checkMute();
         
         if (!keydown.p) {
             pDown = false;
         }
             
-        if (keydown.p && !pDown) {
-            pauseGame = true;
+        if ((keydown.p && !pDown) || imgStore["pause"].clicked) {
+            imgStore["pause"].clicked = false;
             pDown = true;
+            pauseGame = true;
             pauseTime = thisTime;
             console.log("paused");
         }
@@ -323,6 +400,8 @@ function main() {
         //  player2.x += 5;
         //}
         
+        // if 2 player
+        
         if (menuSelection == 2) {
         
             if (keydown.s) {
@@ -333,19 +412,29 @@ function main() {
                 player2.y -= padOffset;
             }
         }
-        else {
+        else {  // 1 player
+            // player 2 AI        
+            var aiOffset = padOffset/aiSpeed;
             
-            var aiOffset = padOffset/2.2;
+            // when core, reset AI to middle
+            if (reset == 1) {
+                if (player2.y+player2.height/2 > CANVAS_HEIGHT/2) {
+                    player2.y -= aiOffset;
+                }
             
-            if (ball.angle == -90) {
-                if (ball.y > player2.y+player2.height/2) {
+                if (player2.y+player2.height/2 < CANVAS_HEIGHT/2) {
+                    player2.y += aiOffset;
+                }
+            }
+            else if (ball.angle == -90) {  // if ball is flat goto ball
+                if (ball.y + randOffset > player2.y+player2.height/2) {
                     player2.y += aiOffset;
                 }
                 
-                if (ball.y < player2.y+player2.height/2) {
+                if (ball.y - randOffset < player2.y+player2.height/2) {
                     player2.y -= aiOffset;
                 }
-            }
+            } 
             else {
                 if (ball.angle < 0) {
                     
@@ -367,25 +456,7 @@ function main() {
                     }
                 }
             }
-        }
-    
-        /*      if ((player.orient == "v") && (keydown.h)) {
-            player.width = player.vheight;
-            player.height = player.vwidth;
-            player.x -= (player.vheight/5)*2;
-            player.y += (player.vheight/5)*2;
-            player.orient="h";
-    }
-      
-        
-        if ((player.orient == "h") && (keydown.j)) {
-            player.width = player.vwidth;
-            player.height = player.vheight; 
-            player.x += (player.vheight/5)*2;
-            player.y -= (player.vheight/5)*2;
-            player.orient="v"
-        }
-    */  
+        }  // end of 1 player AI
     
         
         player.x = player.x.clamp(0, CANVAS_WIDTH - player.width);
@@ -399,14 +470,14 @@ function main() {
         
         if (collide(ball,player)) {
             ball.x = player.x-ball.width;
-            Sound.play("paddle_hit");
+            playSound("paddle_hit");
             spin (player);
         }
         
            
         if (collide(ball,player2)) {
             ball.x = player2.x+player2.width;
-            Sound.play("paddle_hit");
+            playSound("paddle_hit");
             spin (player2);   
         }
         
@@ -480,13 +551,13 @@ function main() {
         if(ball.y>CANVAS_HEIGHT-bottomoff-ball.height) {
             ball.revy();
             ball.y=CANVAS_HEIGHT-bottomoff-ball.height;
-            Sound.play("wall_hit");
+            playSound("wall_hit");
             
         }
         else if (ball.y<topoff) {
             ball.revy();
             ball.y=topoff;
-            Sound.play("wall_hit");
+            playSound("wall_hit");
             
             
         }
@@ -495,10 +566,13 @@ function main() {
             ball.vx=0; 
             ball.vy=0;
             ball.x=CANVAS_WIDTH/2 - (ball.width/2)
-            Sound.play("score");
+            playSound("score");
             score2.inc();
+            reset = 1;
             setTimeout(function(){
+                
                 ball.newMotion((Math.floor(Math.random()*(12))*10)+30, ballSpeed);
+                reset = 0;
             }, 1000);
             
             console.log(score2.score + "--- " + score1.score);
@@ -507,9 +581,11 @@ function main() {
             ball.vx=0; 
             ball.vy=0;
             ball.x=CANVAS_WIDTH/2 - (ball.width/2)
-            Sound.play("score");
+            playSound("score");
             score1.inc();
+            reset = 1;
             setTimeout(function(){
+                reset = 0;
                 ball.newMotion((Math.floor(Math.random()*(-12))*10)-30, ballSpeed);
             }, 1000);
             console.log(score2.score + "--- " + score1.score);
@@ -530,6 +606,19 @@ function main() {
         
     }
     
+    
+    
+    function checkMute(){
+        if (!keydown.m) {
+                    mDown = false;
+                }
+                if ((keydown.m && !mDown) || imgStore["muted"].clicked) {
+                    isMute = !isMute;
+                    mDown = true;
+                    imgStore["muted"].clicked = false;
+                }
+    }
+    
     var menuSelection = 1;
     
     function updateMenu() {
@@ -540,12 +629,43 @@ function main() {
         if ((keydown.up || keydown.w) && menuSelection == 2) {
             menuSelection = 1;
         }
+        checkMute();
     }
+    
+    var isMute = false;
+    
+    function drawPause() {
+            if (pauseGame){
+                imgStore.drawImage("play");
+            }
+            else {
+                imgStore.drawImage("pause");
+            }
+        };
+    
+     function drawMute() {
+            if (isMute){
+                imgStore.drawImage("muted");
+            }
+            else {
+                imgStore.drawImage("unmuted");
+            }
+        };
     
     function drawmenu() {
         canvas.fillStyle = "#000";
         canvas.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
         
+        
+        function icon() {
+            imgStore.drawImage("i");
+            drawMute();
+            imgStore.drawImage("settings");
+        };
+        
+
+        icon();
+
         canvas.fillStyle = "#fff";
         canvas.textAlign = "center";
         canvas.font = "bold 30px sans-serif";
@@ -572,7 +692,8 @@ function main() {
         canvas.fillText("(Press space to continue)", CANVAS_WIDTH/2, CANVAS_HEIGHT/2+100);
         
     }
-    
+
+
     function draw() {
         var n;
         var linewidth = 4
@@ -583,7 +704,8 @@ function main() {
             canvas.fillStyle = "#fff";
             canvas.fillRect((CANVAS_WIDTH/2)-(linewidth/2), topoff+lineheight+(n*2*lineheight), linewidth, lineheight);
         }
-            
+        drawPause();
+        drawMute();    
         player2.draw();
         player.draw();
         ball.draw();                                                                                                                                                                                                                 
@@ -631,20 +753,13 @@ function main() {
                 update();
             } else {
             
-                if (!keydown.p) {
-                    pDown = false;
-                }
-                if (keydown.p && !pDown) {
-                    pauseGame = false;
-                    pDown = true;
-                    lastTime = new Date().getTime();
-                    console.log("unpaused");
-                }
-                
+                pExemptUpdate();
             }
+            
             draw();
             
-            if (score1.score >= 2 || score2.score >= 2) {
+            
+            if (score1.score >= 5 || score2.score >= 5) {
                 gameState = 3;
             }
         }
