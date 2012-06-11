@@ -56,11 +56,19 @@ function main() {
             var iconx = 20
             var icony = 550
             this.loadImage('img/i.png','i',iconx,icony);
+            this.loadImage('img/menu.png','menu',iconx,icony);
+            this.loadImage('img/menu.png','inMenu',3*iconx + 2*imgWi,icony);
             this.loadImage('img/pause.png','pause',iconx,icony);
             this.loadImage('img/play.png','play',iconx,icony);
             this.loadImage('img/unmuted.png','unmuted',2*iconx + imgWi,icony);
             this.loadImage('img/muted.png','muted',2*iconx + imgWi,icony);
             this.loadImage('img/settings.png','settings',3*iconx + 2*imgWi,icony);
+            this.loadImage('img/reset.png','reset',4*iconx + 3*imgWi,icony);
+            this.loadImage('img/instructions.png','instructions', 50, 50);
+            this.loadImage('img/1player.png','1player', CANVAS_WIDTH/2-115, CANVAS_HEIGHT/2-130);
+            this.loadImage('img/2player.png','2player', CANVAS_WIDTH/2-115, CANVAS_HEIGHT/2+70);
+            
+           
         },
         loadImage: function(src, name, x, y){
             var img = new Image();
@@ -80,9 +88,13 @@ function main() {
             console.log("x: "+x);
             console.log("y: "+y);
             this.checkImageClick("i", x, y);
+            this.checkImageClick("menu", x, y);
+            this.checkImageClick("inMenu", x, y);
             this.checkImageClick("pause", x, y);
             this.checkImageClick("muted", x, y);
             this.checkImageClick("settings", x, y);
+            this.checkImageClick("reset", x, y);
+            this.checkImageClick("instructions", x, y);
         },
         checkImageClick: function(name, x, y){
             var imge = imgStore[name];
@@ -345,6 +357,9 @@ function main() {
     var pauseGame = false;
     var mDown = false;
     var pDown = false;
+    var iDown = false;
+    var backDown = false;
+    var rDown = false;
     
     var ballIntercept = 0;
     
@@ -371,6 +386,7 @@ function main() {
         lastTime = thisTime;
         checkMute();
         
+        
         if (!keydown.p) {
             pDown = false;
         }
@@ -381,6 +397,27 @@ function main() {
             pauseGame = true;
             pauseTime = thisTime;
             console.log("paused");
+        }
+        
+        if (!keydown.r) {
+            rDown = false;
+        }
+            
+        if ((keydown.r && !rDown) || imgStore["reset"].clicked) {
+            imgStore["reset"].clicked = false;
+            rDown = true;
+            ball.vx=0; 
+            ball.vy=0;
+            ball.x=CANVAS_WIDTH/2 - (ball.width/2)
+            ball.y = 200
+            score2.reset();
+            score1.reset();
+            setTimeout(function(){
+                ball.newMotion((Math.floor(Math.random()*(12))*10)+30, ballSpeed);
+                reset = 0;
+            }, 1000);
+            
+            
         }
         
         if (keydown.down) {
@@ -610,70 +647,114 @@ function main() {
     
     function checkMute(){
         if (!keydown.m) {
-                    mDown = false;
-                }
-                if ((keydown.m && !mDown) || imgStore["muted"].clicked) {
-                    isMute = !isMute;
-                    mDown = true;
-                    imgStore["muted"].clicked = false;
-                }
+            mDown = false;
+        }
+        if ((keydown.m && !mDown) || imgStore["muted"].clicked) {
+            isMute = !isMute;
+            mDown = true;
+            imgStore["muted"].clicked = false;
+        }
+    }
+    
+    function checkI(){
+        if (!keydown.i) {
+            iDown = false;
+        }
+        if ((keydown.i && !iDown) || imgStore["i"].clicked) {
+            iDown = true;
+            changeGameState(4);
+            imgStore["i"].clicked = false;
+            imgStore["menu"].clicked = false;
+        }
+    }
+    
+    function checkMenu(){
+        if (!keydown["backspace"]) {
+            backDown = false;
+        }
+        if ((keydown["backspace"] && !backDown) || imgStore["menu"].clicked) {
+            backDown = true;
+            changeGameState(1);
+            imgStore["menu"].clicked = false;
+            imgStore["i"].clicked = false;
+        }
     }
     
     var menuSelection = 1;
     
     function updateMenu() {
-        if ((keydown.down || keydown.s) && menuSelection == 1) {
+        if ((keydown.down) && menuSelection == 1) {
             menuSelection = 2;
         }
         
-        if ((keydown.up || keydown.w) && menuSelection == 2) {
+        if ((keydown.up) && menuSelection == 2) {
             menuSelection = 1;
         }
         checkMute();
+        checkI();
     }
+    
+    function updateI() {
+        checkMute();
+        checkMenu()
+    }
+    
+    
+    function drawI(){
+        
+        canvas.fillStyle = "#000";
+        canvas.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        
+
+        imgStore.drawImage("menu");
+        drawMute();
+        imgStore.drawImage("settings");
+        imgStore.drawImage("instructions");
+
+        canvas.fillStyle = "#fff";
+        canvas.textAlign = "center";
+        canvas.font = "20px sans-serif";
+
+    }
+    
+    function drawPause() {
+        if (pauseGame){
+            imgStore.drawImage("play");
+        }
+        else {
+            imgStore.drawImage("pause");
+        }
+    };
     
     var isMute = false;
     
-    function drawPause() {
-            if (pauseGame){
-                imgStore.drawImage("play");
-            }
-            else {
-                imgStore.drawImage("pause");
-            }
-        };
-    
-     function drawMute() {
-            if (isMute){
-                imgStore.drawImage("muted");
-            }
-            else {
-                imgStore.drawImage("unmuted");
-            }
-        };
+    function drawMute() {
+        if (isMute){
+            imgStore.drawImage("muted");
+        }
+        else {
+            imgStore.drawImage("unmuted");
+        }
+    };
     
     function drawmenu() {
         canvas.fillStyle = "#000";
         canvas.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
         
-        
-        function icon() {
-            imgStore.drawImage("i");
-            drawMute();
-            imgStore.drawImage("settings");
-        };
-        
 
-        icon();
+        imgStore.drawImage("i");
+        drawMute();
+        imgStore.drawImage("settings");
+
 
         canvas.fillStyle = "#fff";
         canvas.textAlign = "center";
         canvas.font = "bold 30px sans-serif";
-        canvas.fillText("1 PLAYER", CANVAS_WIDTH/2, CANVAS_HEIGHT/2-100);
-        canvas.fillText("2 PLAYER", CANVAS_WIDTH/2, CANVAS_HEIGHT/2+100);
+        imgStore.drawImage("1player");
+        imgStore.drawImage("2player");
         
+        canvas.fillText(">", CANVAS_WIDTH/2-140, CANVAS_HEIGHT/2+menuSelection*200-300);
         
-        canvas.fillText(">", CANVAS_WIDTH/2-100, CANVAS_HEIGHT/2+menuSelection*200-300);
     }
     
     function drawWin() {
@@ -704,6 +785,8 @@ function main() {
             canvas.fillStyle = "#fff";
             canvas.fillRect((CANVAS_WIDTH/2)-(linewidth/2), topoff+lineheight+(n*2*lineheight), linewidth, lineheight);
         }
+        imgStore.drawImage("reset");
+        imgStore.drawImage("inMenu");
         drawPause();
         drawMute();    
         player2.draw();
@@ -716,10 +799,16 @@ function main() {
     }
     
     var gameState = 1;
+    
+    function changeGameState(newState){
+        gameState = newState;
+        
+        console.log("Change State " + newState);
+        //pauseGame = false;
+    }
+    
     var spaceDown = false;
-    
-    
-    
+
     
     setInterval( function() {
         
@@ -732,7 +821,7 @@ function main() {
                 spaceDown = false;
             }
             if ((keydown.space || keydown["return"]) && !spaceDown) {
-                gameState = 2;
+                changeGameState(2);
                 score1.reset();
                 score2.reset();
                 ball.vx=0; 
@@ -744,8 +833,13 @@ function main() {
                 }, 1000);
                 //ball.newMotion(30, ballSpeed);
                 lastTime = new Date().getTime();
-            }
-            
+            }            
+        }
+        
+        if (gameState == 4) {
+            drawI();
+            updateI();
+
         }
         
         if (gameState == 2) {
@@ -758,15 +852,20 @@ function main() {
             
             draw();
             
+            if (keydown["backspace"] || imgStore["inMenu"].clicked) {
+                changeGameState(1);
+                imgStore["inMenu"].clicked = false;
+                
+            }
             
             if (score1.score >= 5 || score2.score >= 5) {
-                gameState = 3;
+                changeGameState(3);
             }
         }
         
         if (gameState == 3) {
             if (keydown.space) {
-                gameState = 1;
+                changeGameState(1);
                 spaceDown = true;
                 
             }
