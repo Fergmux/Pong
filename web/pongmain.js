@@ -401,7 +401,7 @@ function main() {
         
         if (!keydown.r) {
             rDown = false;
-        }
+        }  
             
         if ((keydown.r && !rDown) || imgStore["reset"].clicked) {
             imgStore["reset"].clicked = false;
@@ -494,8 +494,8 @@ function main() {
                 }
             }
         }  // end of 1 player AI
-    
         
+            
         player.x = player.x.clamp(0, CANVAS_WIDTH - player.width);
         player.y = player.y.clamp(topoff, CANVAS_HEIGHT- player.height-bottomoff);
             
